@@ -1,0 +1,23 @@
+FROM microsoft/aspnetcore:2.0 AS base
+WORKDIR /app
+
+EXPOSE 5000/tcp
+ENV ASPNETCORE_URLS http://*:5000
+ENV ASPNETCORE_ENVIRONMENT="Development"
+
+FROM microsoft/aspnetcore-build:2.0 AS build
+WORKDIR /src
+COPY *.sln ./
+COPY Api/Api.csproj Api/
+RUN dotnet restore
+COPY . .
+WORKDIR /src/Api
+RUN dotnet build -c Release -o /app
+
+FROM build AS publish
+RUN dotnet publish -c Release -o /app
+
+FROM base AS final
+WORKDIR /app
+COPY --from=publish /app .
+ENTRYPOINT ["dotnet", "Api.dll"]
